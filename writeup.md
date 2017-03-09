@@ -61,7 +61,9 @@ The sliding windows search was implemented in two ways - the first one is when t
 
 ![alt text][image3]
 
-The faster second technique is implemented as a function `find_cars()` from the function database `ImageFunctions.py` and it takes the whole image and a scale as input and returns a list of rectangular points. The scales were experimented with and seen which would give out the least false positives and took lesser time to run.
+The slower technique had parameters like `xy_window`, which standardized the dimension of the window in pixels, `y_start_stop` to control the height scrolling of the window and the `xy_overlap` for the extent of overlap between two windows. On the test_images, `xy_window` of `(96,96)` was a good estimate, as it captured the most of the section of the car. Also, larger the dimension of the window, smaller is the chance of getting false positives. `y_start_stop` was assigned a value of `(400,680)` to exclude the sky part of the image, as the likelihood of finding a car in the sky is zero, given the extent of current technology. :)
+
+The faster second technique is implemented as a function `find_cars()` from the function database `ImageFunctions.py` and it takes the whole image and a `scale` for dimensioning the window as input and returns a list of rectangular points. The scales were experimented with and seen which would give out the least false positives and took lesser time to run. In the end I took a list of scales as `[1.4, 1.5]` to generate the bounding boxes.
 
 #### 2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 

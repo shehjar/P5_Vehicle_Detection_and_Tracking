@@ -73,8 +73,8 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
             # Scale features and make a prediction
             test_features = X_scaler.transform(np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))        
             test_prediction = svc.predict(test_features)
-            
-            if test_prediction == 1:
+            df = svc.decision_function(test_features)
+            if (test_prediction == 1) and (df >= 0) :
                 xbox_left = np.int(xleft*scale)
                 ytop_draw = np.int(ytop*scale)
                 win_draw = np.int(window*scale)
