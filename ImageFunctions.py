@@ -7,19 +7,19 @@ Created on Tue Mar  7 12:11:17 2017
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
+import cv2, os
 import time
 from skimage.feature import hog
-from sklearn.svm import LinearSVC
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 
+curfolder = os.getcwd()
+# This folder is created for storing sub images for hard negative mining
+pos_folder = os.path.join(curfolder,'positives')
+if not os.path.exists(pos_folder):
+    os.mkdir(pos_folder)
 
 # Define a single function that can extract features using hog sub-sampling and make predictions
 def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins):
     
-    draw_img = np.copy(img)
-    heatmap = np.zeros_like(draw_img[:,:,0])
     img = img.astype(np.float32)/255
     
     img_tosearch = img[ystart:ystop,:,:]
@@ -48,6 +48,8 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
     hog2 = get_hog_features(ch2, orient, pix_per_cell, cell_per_block, feature_vec=False)
     hog3 = get_hog_features(ch3, orient, pix_per_cell, cell_per_block, feature_vec=False)
     
+    bbox_list = []
+    
     for xb in range(nxsteps):
         for yb in range(nysteps):
             ypos = yb*cells_per_step
@@ -69,18 +71,21 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
             hist_features = color_hist(subimg, nbins=hist_bins)
 
             # Scale features and make a prediction
-            test_features = X_scaler.transform(np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))    
-            #test_features = X_scaler.transform(np.hstack((shape_feat, hist_feat)).reshape(1, -1))    
+            test_features = X_scaler.transform(np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))        
             test_prediction = svc.predict(test_features)
             
             if test_prediction == 1:
                 xbox_left = np.int(xleft*scale)
                 ytop_draw = np.int(ytop*scale)
                 win_draw = np.int(window*scale)
-                cv2.rectangle(draw_img,(xbox_left, ytop_draw+ystart),(xbox_left+win_draw,ytop_draw+win_draw+ystart),(0,0,255),6)
-                heatmap[ytop_draw + ystart:ytop_draw+win_draw+ystart, xbox_left:xbox_left+win_draw] += 1
+                # Below Lines of code was used for hard negative mining
+                #subimg = cv2.cvtColor(subimg, cv2.COLOR_YCrCb2BGR)
+                #subimg = np.uint8(subimg*255)
+                #subimg_filename = 'extra_'+str(time.time())+'.png'
+                #cv2.imwrite(os.path.join(pos_folder,subimg_filename), subimg)
+                bbox_list.append(((xbox_left, ytop_draw+ystart),(xbox_left+win_draw,ytop_draw+win_draw+ystart)))
                 
-    return draw_img, heatmap
+    return bbox_list
 
 def convert_color(img, conv='RGB2YCrCb'):
     if conv == 'RGB2YCrCb':
